@@ -20,7 +20,10 @@ def run_pbaa(sample_name) -> subprocess.CompletedProcess:
 def get_samples():
     # find samples for which clustering has not yet been performed
     sample_names = [fn[:-6] for fn in os.listdir('fastq') if fn.endswith('.fastq')]
-    execution_names = [fn for fn in os.listdir('execution') if os.path.isdir('execution/'+fn)]
+    if os.path.isdir('execution'):
+        execution_names = [fn for fn in os.listdir('execution') if os.path.isdir('execution/'+fn)]
+    else:
+        execution_names = []    
     # exclude empty directories from executions
     for directory in execution_names:
         if os.listdir('execution/'+directory) == []:
