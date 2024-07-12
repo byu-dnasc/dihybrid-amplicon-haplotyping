@@ -31,8 +31,16 @@ if command == "pbaa":
         print("sbatch executable not found.")
         sys.exit(1)
     samples = run_pbaa.get_samples()
-    python_cmd = f"python3 -c 'from . import run_pbaa; run_pbaa.on({samples})'"
-    sbatch_cmd = f'sbatch --time=1:00:00 --nodes=1 --ntasks={len(samples)} --mem-per-cpu=1G --wrap="{python_cmd}"'
+    script = f'from . import run_pbaa; run_pbaa.on({samples})'
+    python_cmd = f"python3 -c '{script}'"
+    sbatch_cmd = ' '.join((
+        'sbatch', 
+        '--nodes=1',
+        '--time=01:00:00',
+        '--mem-per-cpu=1G',
+        f'--wrap="{python_cmd}"'
+        f'--ntasks={len(samples)}',
+    ))
     subprocess.run(sbatch_cmd, shell=True)
 elif command == "ht":
     ht_analysis.main()
