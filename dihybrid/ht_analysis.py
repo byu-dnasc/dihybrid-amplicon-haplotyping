@@ -31,6 +31,7 @@ def _get_haplotype(seq):
     return (snp_1+snp_2).lower()
 
 def main():
+    assert os.path.isdir('execution'), 'No pbaa execution directory found. Run pbaa first.'
     rows = []
     cluster_rows = []
     for sample_name in [fn for fn in os.listdir('execution')]:
