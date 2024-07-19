@@ -1,5 +1,6 @@
 import os
 import sys
+import shutil
 import subprocess
 
 from . import parameters
@@ -24,21 +25,18 @@ parameters.GENE = gene
 command = sys.argv[2]
 
 if command == "pbaa":
-    if not os.access('pbaa', os.X_OK):
-        print("pbaa executable not found.")
-        sys.exit(1)
-    if not os.access('sbatch', os.X_OK):
-        print("sbatch executable not found.")
-        sys.exit(1)
+    assert shutil.which('pbaa'), "pbaa executable not found."
+    assert shutil.which('sbatch'), "sbatch executable not found."
     samples = run_pbaa.get_samples()
-    script = f'from . import run_pbaa; run_pbaa.on({samples})'
-    python_cmd = f"python3 -c '{script}'"
+    script = f'import dihybrid.run_pbaa; dihybrid.run_pbaa.on({samples})'
+    script.replace('\'', '\\\'')
+    python_cmd = f'python3 -c \\"{script}\\"'
     sbatch_cmd = ' '.join((
         'sbatch', 
         '--nodes=1',
         '--time=01:00:00',
         '--mem-per-cpu=1G',
-        f'--wrap="{python_cmd}"'
+        f'--wrap="{python_cmd}"',
         f'--ntasks={len(samples)}',
     ))
     subprocess.run(sbatch_cmd, shell=True)

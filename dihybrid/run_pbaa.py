@@ -5,10 +5,10 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from . import parameters
 
 def get_pbaa_cmd(sample_name):
-    options = '--max-reads-per-guide=1000000 --max-uchime-score=0.01',
-    guide=parameters.get['guide'],
-    input_fastq=f'fastq/{sample_name}.fastq',
-    output_prefix=f'execution/{sample_name}/{sample_name}'
+    options = '--max-reads-per-guide=1000000 --max-uchime-score=0.01'
+    guide = f'guides/{parameters.get["guide"]}'
+    input_fastq = f'fastq/{sample_name}.fastq'
+    output_prefix = f'execution/{sample_name}/{sample_name}'
     return f'pbaa cluster {options} {guide} {input_fastq} {output_prefix}'
 
 def run_pbaa(sample_name) -> subprocess.CompletedProcess:
@@ -20,7 +20,10 @@ def run_pbaa(sample_name) -> subprocess.CompletedProcess:
 def get_samples():
     # find samples for which clustering has not yet been performed
     sample_names = [fn[:-6] for fn in os.listdir('fastq') if fn.endswith('.fastq')]
-    execution_names = [fn for fn in os.listdir('execution') if os.path.isdir('execution/'+fn)]
+    if os.path.isdir('execution'):
+        execution_names = [fn for fn in os.listdir('execution') if os.path.isdir('execution/'+fn)]
+    else:
+        execution_names = []    
     # exclude empty directories from executions
     for directory in execution_names:
         if os.listdir('execution/'+directory) == []:
@@ -61,7 +64,7 @@ def on(samples):
         error = ''
         for pbaa_run in as_completed(pbaa_runs):
             run_result: subprocess.CompletedProcess = pbaa_run.result()
-            pbaa_cmd = run_result.args.join(' ')
+            pbaa_cmd = run_result.args
             # capture the first error, or at least stderr
             if run_result.returncode != 0:
                 failures += 1
