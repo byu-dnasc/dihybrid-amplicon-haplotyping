@@ -3,6 +3,7 @@ import subprocess
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from . import parameters
+from . import fromfile
 
 def get_pbaa_cmd(sample_name):
     options = '--max-reads-per-guide=1000000 --max-uchime-score=0.01'
@@ -18,18 +19,28 @@ def run_pbaa(sample_name) -> subprocess.CompletedProcess:
                           capture_output=True)
 
 def get_samples():
-    # find samples for which clustering has not yet been performed
-    sample_names = [fn[:-6] for fn in os.listdir('fastq') if fn.endswith('.fastq')]
-    if os.path.isdir('execution'):
-        execution_names = [fn for fn in os.listdir('execution') if os.path.isdir('execution/'+fn)]
-    else:
-        execution_names = []    
-    # exclude empty directories from executions
-    for directory in execution_names:
-        if os.listdir('execution/'+directory) == []:
-            execution_names.remove(directory)
+    '''
+    Get names of FASTQ files for which clustering has not yet been performed.
 
-    to_analyze = [name for name in sample_names if name not in execution_names]
+    Also, clean up any incomplete executions.
+    '''
+    # get all available sample names
+    sample_names = [fn[:-6] for fn in os.listdir('fastq') if fn.endswith('.fastq')]
+    # get samples that already have executions
+    if os.path.isdir('execution'):
+        executions = []
+        for fn in os.listdir('execution'):
+            execution_dir = f'execution/{fn}'
+            if os.path.isdir(execution_dir):
+                if fromfile.execution_valid(fn):
+                    executions.append(fn)
+                else:
+                    subprocess.run(['rm', '-rf', execution_dir])
+    else:
+        executions = []    
+
+    # filter out samples that already have executions
+    to_analyze = [name for name in sample_names if name not in executions]
 
     # verify that an index file exists for each sample
     for sample_name in to_analyze:
