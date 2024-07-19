@@ -32,10 +32,10 @@ if command == "pbaa":
     script.replace('\'', '\\\'')
     python_cmd = f'python3 -c \\"{script}\\"'
     sbatch_cmd = ' '.join((
-        'sbatch', 
+        'sbatch',
         '--nodes=1',
         '--time=01:00:00',
-        '--mem-per-cpu=1G',
+        '--mem-per-cpu=2G',
         f'--wrap="{python_cmd}"',
         f'--ntasks={len(samples)}',
     ))
