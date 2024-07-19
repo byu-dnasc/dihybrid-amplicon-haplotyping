@@ -55,3 +55,11 @@ def get_fastq(input_path, fastq_name):
     cmd = _get_faidx_cmd(fastq_path)
     result = subprocess.run(cmd, shell=True, capture_output=True)
     result.check_returncode()
+
+def execution_valid(sample_name):
+    '''Identify subdirs of execution/ which contain a FASTA of passed
+    cluster sequences.'''
+    filenames = os.listdir(f'execution/{sample_name}')
+    if f'{sample_name}_passed_cluster_sequences.fasta' in filenames:
+        return True
+    return False

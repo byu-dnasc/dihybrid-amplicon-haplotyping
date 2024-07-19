@@ -30,14 +30,6 @@ def _get_haplotype(seq):
     snp_1, snp_2 = alignment[1,pos_1], alignment[1,pos_2]
     return (snp_1+snp_2).lower()
 
-def _execution_valid(sample_name):
-    '''Identify subdirs of execution/ which contain a FASTA of passed
-    cluster sequences.'''
-    filenames = os.listdir(f'execution/{sample_name}')
-    if f'{sample_name}_passed_cluster_sequences.fasta' in filenames:
-        return True
-    return False
-
 def write_clusters(cluster_rows):
     with open('clusters_by_haplotype.json', 'w') as f:
         header = ('sample_name', 'cluster_name', 'haplotype')
@@ -59,7 +51,7 @@ def main():
     rows = []
     cluster_rows = []
     for sample_name in os.listdir('execution'):
-        if not _execution_valid(sample_name):
+        if not fromfile.execution_valid(sample_name):
             incomplete_executions.append(sample_name)
             continue
         ht_counts = {ht: 0 for ht in HAPLOTYPES}
@@ -67,7 +59,7 @@ def main():
             if freq < 0.05:
                 continue
             haplotype = _get_haplotype(seq)
-            assert haplotype in HAPLOTYPES, f'haplotype {haplotype} not among possible haplotypes {HAPLOTYPES} ({sample_name=}, {cluster_name=})'
+            assert haplotype in HAPLOTYPES, f'haplotype {haplotype} not among possible haplotypes {HAPLOTYPES} (sample_name={sample_name}, cluster_name={cluster_name})'
             ht_counts[haplotype] += read_count
             cluster_rows.append((sample_name, cluster_name, haplotype))
         total_reads = fromfile.get_total_num_reads(sample_name)
