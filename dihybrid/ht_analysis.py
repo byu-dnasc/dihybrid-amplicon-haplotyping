@@ -28,7 +28,9 @@ def _get_haplotype(seq):
     pos_2 = parameters.get['SNP_2'] - 1
     alignment = _get_alignment(seq)
     snp_1, snp_2 = alignment[1,pos_1], alignment[1,pos_2]
-    return (snp_1+snp_2).lower()
+    haplotype = (snp_1+snp_2).lower()
+    assert haplotype in HAPLOTYPES, f'haplotype {haplotype} not among possible haplotypes {HAPLOTYPES} (sample_name={sample_name}, cluster_name={cluster_name})'
+    return haplotype
 
 def write_clusters(cluster_rows):
     with open('clusters_by_haplotype.json', 'w') as f:
@@ -40,7 +42,8 @@ def write_clusters(cluster_rows):
 def write_csv(rows):
     # write the haplotype counts to a file
     with open('haplotype_counts.tsv', 'w') as f:
-        header = ('sample_name', 'total_reads', 'reads_passing_qc') + tuple('haplotype_' + ht + '_reads' for ht in HAPLOTYPES)
+        header = ('sample_name', 'total_reads', 'failed_qc', 'failed_haplotyping') + \
+            tuple('haplotype_' + ht + '_reads' for ht in HAPLOTYPES)
         f.write('\t'.join(header) + '\n')
         for row in rows:
             f.write('\t'.join(str(x) for x in row) + '\n')
@@ -55,19 +58,24 @@ def main():
             incomplete_executions.append(sample_name)
             continue
         ht_counts = {ht: 0 for ht in HAPLOTYPES}
+        failed_haplotyping = 0
         for cluster_name, seq, read_count, freq, possibly_chimeric in fromfile.get_clusters(sample_name):
-            if freq < 0.05:
-                continue
-            haplotype = _get_haplotype(seq)
-            assert haplotype in HAPLOTYPES, f'haplotype {haplotype} not among possible haplotypes {HAPLOTYPES} (sample_name={sample_name}, cluster_name={cluster_name})'
+            # if freq < 0.05: continue
+            try:
+                haplotype = _get_haplotype(seq)
+            except:
+                failed_haplotyping += read_count
             ht_counts[haplotype] += read_count
             cluster_rows.append((sample_name, cluster_name, haplotype))
         total_reads = fromfile.get_total_num_reads(sample_name)
-        reads_passing_qc = fromfile.get_num_input_reads(sample_name)
-        rows.append((sample_name, total_reads, reads_passing_qc) + tuple(ht_counts[ht] for ht in HAPLOTYPES))
+        passed_qc = fromfile.get_num_input_reads(sample_name)
+        failed_qc = total_reads - passed_qc
+        rows.append((sample_name, total_reads, failed_qc, failed_haplotyping) + \
+                     tuple(ht_counts[ht] for ht in HAPLOTYPES))
 
-    print(f'pbAA execution(s) for {len(incomplete_executions)}',
-          f'samples are incomplete: {' '.join(incomplete_executions)}')
+    if incomplete_executions:
+        print(f'pbAA execution(s) for {len(incomplete_executions)}',
+            f'samples are incomplete: {" ".join(incomplete_executions)}')
     
     write_clusters(cluster_rows)
     write_csv(rows)

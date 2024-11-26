@@ -2,3 +2,5 @@
 fastq
 execution
 slurm*
+*.json
+*.tsv

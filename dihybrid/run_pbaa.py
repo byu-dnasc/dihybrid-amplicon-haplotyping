@@ -5,19 +5,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from . import parameters
 from . import fromfile
 
-def get_pbaa_cmd(sample_name):
-    options = '--max-reads-per-guide=1000000 --max-uchime-score=0.01'
-    guide = f'guides/{parameters.get["guide"]}'
-    input_fastq = f'fastq/{sample_name}.fastq'
-    output_prefix = f'execution/{sample_name}/{sample_name}'
-    return f'pbaa cluster {options} {guide} {input_fastq} {output_prefix}'
-
-def run_pbaa(sample_name) -> subprocess.CompletedProcess:
-    cmd = get_pbaa_cmd(sample_name)
-    return subprocess.run(cmd, 
-                          shell=True, 
-                          capture_output=True)
-
 def get_samples():
     '''
     Get names of FASTQ files for which clustering has not yet been performed.
@@ -58,8 +45,21 @@ def get_samples():
         exit(1)
 
     # run pbaa on each sample
-    print('Found', len(to_analyze), 'samples which pbAA has not yet been run on.')
+    print('Found', len(to_analyze), 'samples on which pbAA has not yet been run.')
     return to_analyze
+
+def get_pbaa_cmd(sample_name):
+    options = parameters.get['pbaa_options']
+    guide = f'guides/{parameters.get["guide"]}'
+    input_fastq = f'fastq/{sample_name}.fastq'
+    output_prefix = f'execution/{sample_name}/{sample_name}'
+    return f'pbaa cluster {" ".join(options)} {guide} {input_fastq} {output_prefix}'
+
+def run_pbaa(sample_name) -> subprocess.CompletedProcess:
+    cmd = get_pbaa_cmd(sample_name)
+    return subprocess.run(cmd, 
+                          shell=True, 
+                          capture_output=True)
 
 def on(samples):
 
@@ -72,28 +72,26 @@ def on(samples):
                 pbaa_runs.append(future)
 
         failures = 0
-        error = ''
+        n_stderr = 0
         for pbaa_run in as_completed(pbaa_runs):
             run_result: subprocess.CompletedProcess = pbaa_run.result()
             pbaa_cmd = run_result.args
             # capture the first error, or at least stderr
-            if run_result.returncode != 0:
+            if run_result.returncode == 0:
+                print(f'pbAA run "{pbaa_cmd}" completed successfully.')
+                if run_result.stderr:
+                    print('However, it wrote the following to stderr:')
+                    print(run_result.stderr.decode("utf-8"))
+            else:
                 failures += 1
                 if error == '': # only collect first error
                     error = f'pbAA run "{pbaa_cmd}" failed.\n' 
                     error += run_result.stderr.decode("utf-8")
                     error += '\n'
-            if run_result.stderr:
-                if error == '': # only collect first error
-                    error = f'pbAA run "{pbaa_cmd}" failed.\n'
-                    error += run_result.stderr.decode("utf-8")
-                    error += '\n'
     if failures:
-        print(f'pbAA runs failed for {failures} samples. Only the first error is shown (below).')
-        print(error)
-    elif error: # i.e., no failures, but stderr was written
-        print('All pbAA runs completed successfully, however at least one wrote to stderr. Only the first instance of this is shown (below).')
-        print(error)
+        print(f'pbAA runs failed for {failures} samples.')
+    elif n_stderr:
+        print(f'All pbAA runs completed successfully, however {n_stderr} wrote to stderr.')
     else:
         print('All pbAA runs completed successfully.')
 

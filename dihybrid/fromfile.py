@@ -15,8 +15,8 @@ def get_clusters(sample_name):
     for cluster_record in clusters:
         label, seq = cluster_record.split('\n', 1)
         read_count = re.search(r'ReadCount-(\d+)', label).group(1)
-        if read_count == '1': # ignore singletons
-            continue
+        if read_count == '1': 
+            continue # somehow, the sum of the number of reads in each category always exceeds the number in the FASTA by exactly the number of singleton clusters. So let's ignore them for now.
         cluster_name = re.search(r'cluster-(\d+)', label).group(1)
         frequency = re.search(r'cluster_freq:(\d+\.\d+)', label).group(1)
         possibly_chimeric = True if not 'uchime_score:-1' in label else False # ignore at high volume

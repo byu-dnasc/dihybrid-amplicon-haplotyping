@@ -1,11 +1,11 @@
-PARAMETERS = {
-    'ADRB1': {
+GENE_INFO = {
+    'adrb1': {
         'SNP_1': 145, # 1-based index
         'SNP_2': 1165, # 1-based index
         'haplotypes': ('ag', 'ac', 'gc', 'gg'),
         'guide': 'adrb1.fa'
     },
-    'ADRB2': {
+    'adrb2': {
         'SNP_1': 46, # 1-based index
         'SNP_2': 79, # 1-based index
         'haplotypes': ('gg', 'ag', 'gc', 'ac'),
@@ -13,6 +13,23 @@ PARAMETERS = {
     }
 }
 
-GENE = 'ADRB2'
+PBAA_DEFAULTS = [
+    # '--max-reads-per-guide=1000000',
+    '--max-uchime-score=0.01'
+]
 
-get = PARAMETERS[GENE]
+SLURM_DEFAULTS = [
+    '--qos=test',
+    '--nodes=1',
+    '--time=01:00:00',
+    '--mem-per-cpu=4G'
+]
+
+get = {}
+get['pbaa_options'] = PBAA_DEFAULTS
+get['slurm_options'] = SLURM_DEFAULTS
+
+def set_gene(gene):
+    '''Add gene info to parameters'''
+    global get
+    get.update(GENE_INFO[gene])
