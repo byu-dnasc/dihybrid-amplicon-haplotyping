@@ -19,7 +19,7 @@ PBAA_DEFAULTS = [
 ]
 
 SLURM_DEFAULTS = [
-    '--qos=test',
+    '--qos=normal',
     '--nodes=1',
     '--time=01:00:00',
     '--mem-per-cpu=4G'
