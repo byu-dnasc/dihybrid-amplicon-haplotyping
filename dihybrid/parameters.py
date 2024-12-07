@@ -14,7 +14,7 @@ GENE_INFO = {
 }
 
 PBAA_DEFAULTS = [
-    # '--max-reads-per-guide=1000000',
+    '--max-reads-per-guide=1000000',
     '--max-uchime-score=0.01'
 ]
 
