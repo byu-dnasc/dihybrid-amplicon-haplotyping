@@ -57,6 +57,7 @@ def get_pbaa_cmd(sample_name):
 
 def run_pbaa(sample_name) -> subprocess.CompletedProcess:
     cmd = get_pbaa_cmd(sample_name)
+    print(cmd)
     return subprocess.run(cmd, 
                           shell=True, 
                           capture_output=True)
